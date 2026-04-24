@@ -9,5 +9,5 @@ df = df.drop(columns=["Unnamed: 0", "label"], errors='ignore')
 # Save cleaned dataset
 df.to_csv("recipes_cleaned.csv", index=False)
 
-print("✅ Cleaned dataset saved as recipes_cleaned.csv")
+print("Cleaned dataset saved as recipes_cleaned.csv")
 print("Remaining columns:", df.columns.tolist())

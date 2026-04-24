@@ -37,7 +37,7 @@ for chunk in pd.read_csv(INPUT_FILE, chunksize=CHUNK_SIZE):
             genre_samples[genre].append(sampled)
             genre_counts[genre] += len(sampled)
 
-    # ✅ Safe stopping condition (no concat)
+    # Safe stopping condition (no concat)
     if all(genre_counts[g] >= SAMPLES_PER_GENRE for g in GENRES):
         break
 
@@ -57,6 +57,6 @@ final_df = final_df.sample(frac=1).reset_index(drop=True)
 # Save
 final_df.to_csv(OUTPUT_FILE, index=False)
 
-print("✅ Done!")
+print("Done!")
 print("Rows per genre:", genre_counts)
 print("Total rows:", len(final_df))
