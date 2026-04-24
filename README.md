@@ -37,23 +37,6 @@ User Input (Ingredients)
 
 ---
 
-## Project Structure
-
-AI_MINI/  
-│  
-├── app.py                     # Streamlit application  
-├── recipe_faiss_index/       # Vector database  
-├── clean.py                  # Dataset preprocessing  
-├── remove_columns.py         # Data cleaning  
-├── recipes_cleaned.csv       # Processed dataset  
-├── recipes_with_docs.csv     # Structured documents  
-├── RAG.ipynb                 # Experimentation notebook  
-├── .env                      # API key (not uploaded)  
-├── .gitignore  
-└── README.md  
-
----
-
 ## Setup Instructions
 
 ### 1. Clone the Repository
