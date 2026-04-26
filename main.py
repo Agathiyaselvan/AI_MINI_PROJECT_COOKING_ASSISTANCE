@@ -83,6 +83,13 @@ def extract_dish(query):
             return q.replace(k, "").strip()
     return q
 
+def is_greeting(query):
+    # Order longer greetings first to match them before shorter ones
+    greetings = ["good morning", "good afternoon", "good evening", "hi there", "hello there", "greetings", "hello", "hi", "hey"]
+    query_lower = query.lower().strip()
+    # Only match if the entire query is JUST a greeting (no other text)
+    return query_lower in greetings
+
 
 # -----------------------------
 # MAIN API
@@ -143,6 +150,14 @@ def chat(req: QueryRequest):
     query = req.query.strip().lower()
 
     # -----------------------------
+    # 🔹 GREETING CHECK
+    # -----------------------------
+    if is_greeting(query):
+        return {
+            "answer": "Hello! 👨‍🍳 I'm your AI Recipe Assistant. I can help you find recipes based on ingredients you have or suggest how to make specific dishes. What would you like to cook today?"
+        }
+
+    # -----------------------------
     # 🔹 OUT OF DOMAIN CHECK
     # -----------------------------
     docs_scores = vector_db.similarity_search_with_score(query, k=1)
@@ -151,7 +166,7 @@ def chat(req: QueryRequest):
 
     if not docs_scores or docs_scores[0][1] > threshold:
         return {
-            "answer": "Out of domain. I can only answer recipe-related queries. Please ask about food or cooking."
+            "answer": "I can only help with food and cooking-related questions. Please ask something about recipes or ingredients!"
         }
 
     # ============================

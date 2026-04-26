@@ -1,52 +1,17 @@
-async function sendMessage() {
-
-    let input = document.getElementById("input");
-    let msg = input.value.trim();
-
-    if (!msg) return;
-
-    let chat = document.getElementById("chat-box");
-
-    // USER MESSAGE
-    chat.innerHTML += `<div class="message user">${msg}</div>`;
-    input.value = "";
-
-    // LOADING
-    let loadingDiv = document.createElement("div");
-    loadingDiv.className = "message bot";
-    loadingDiv.innerText = "Thinking...";
-    chat.appendChild(loadingDiv);
-
-    chat.scrollTop = chat.scrollHeight;
-
-    try {
-        let res = await fetch("http://127.0.0.1:8000/chat", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ query: msg })
-        });
-
-        let data = await res.json();
-
-        // remove loading
-        chat.removeChild(loadingDiv);
-
-        let formatted;
-
-        if (data.answer.toLowerCase().includes("out of domain")) {
-            formatted = `<div class="card"><p>${data.answer}</p></div>`;
-        } else {
-            formatted = format(data.answer, msg);
-        }
-
-        chat.innerHTML += `<div class="message bot">${formatted}</div>`;
-        chat.scrollTop = chat.scrollHeight;
-
-    } catch (error) {
-        chat.removeChild(loadingDiv);
-        chat.innerHTML += `<div class="message bot">Error: Server not responding</div>`;
-    }
-}
+/* 
+  OLD JAVASCRIPT FILE - NOT USED IN REACT BUILD
+  
+  This file is deprecated. The new React frontend uses:
+  - src/components/RecipeChat.jsx (main component with all logic)
+  - src/api/apiClient.js (API client utility)
+  
+  To develop the frontend:
+  1. Navigate to the frontend directory
+  2. Run: npm install
+  3. Run: npm run dev
+  
+  The React dev server will start on http://localhost:3000
+*/
 
 
 // -----------------------------
