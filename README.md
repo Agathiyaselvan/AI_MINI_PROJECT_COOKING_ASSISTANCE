@@ -2,137 +2,197 @@
 
 ## Overview
 
-The AI Recipe Assistant is an intelligent application that helps users discover recipes using either available ingredients or dish-based queries. The system uses Retrieval-Augmented Generation (RAG) to combine semantic search with a Large Language Model (LLM) to provide accurate and structured cooking instructions.
+AI Recipe Assistant is a recipe search and cooking assistant application built with a FastAPI backend and a React-based frontend. It uses Retrieval-Augmented Generation (RAG) to find relevant recipes from a FAISS vector store, then generates a structured answer using a Groq LLM.
+
+The app supports:
+- ingredient-based recipe suggestions
+- dish-based queries like "how to make pasta"
+- missing ingredient detection
+- step-by-step cooking instructions
+- out-of-domain query filtering
 
 ---
 
-## Features
+## Project Architecture
 
-* Ingredient-based recipe recommendation
-* Dish-based query handling (e.g., "how to make pasta")
-* Missing ingredient detection
-* Step-by-step cooking instructions
-* Out-of-domain query detection
-* Chat-based user interface
-* Semantic search using FAISS
-* Hybrid RAG architecture (logic + LLM)
+- `main.py` — FastAPI backend API serving `/chat`
+- `frontend/` — React/Vite frontend that sends queries to the backend
+- `recipe_faiss_index/` — stored FAISS index for recipe retrieval
+- `.env` — environment variables (API key)
+- `.gitignore` — excludes virtual environment, secrets, and large data files
 
----
-
-## Tech Stack
-
-* Frontend: HTML, CSS, JavaScript
-* Backend: FastAPI (Python)
-* Vector Database: FAISS
-* Embeddings: Sentence Transformers (all-MiniLM-L6-v2)
-* LLM: Groq (LLaMA 3.1)
-* Environment: Python Virtual Environment, VS Code
+> Note: `app.py` contains old Streamlit code and is not used by the current React + FastAPI setup.
 
 ---
 
-## Project Structure
+## Folder Structure
 
 ```
 ai_mini_RAG/
-│
 ├── frontend/
+│   ├── package.json
+│   ├── vite.config.js
 │   ├── index.html
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── api/apiClient.js
+│   │   └── index.css
 │   ├── script.js
 │   └── style.css
-│
 ├── main.py
 ├── app.py
 ├── clean.py
 ├── remove_columns.py
 ├── RAG.ipynb
+├── recipes_cleaned.csv
+├── recipes_with_docs.csv
 ├── README.md
 ├── .gitignore
-└── .env
+├── .env
+└── recipe_faiss_index/
+    └── index.faiss
 ```
 
 ---
 
-## How It Works
+## Technology Stack
 
-1. User enters a query (ingredients or dish name)
-2. Query is converted into embeddings
-3. FAISS retrieves the most relevant recipes
-4. Backend selects the best match
-5. Missing ingredients are computed (if applicable)
-6. LLM generates structured response
-7. Output is displayed in the frontend
+- Backend: `FastAPI`, Python
+- Frontend: `React`, `Vite`, `Axios`
+- Vector search: `FAISS`
+- Embeddings: `HuggingFace/all-MiniLM-L6-v2`
+- LLM: `Groq` (LLaMA 3.1)
+- Environment: Python virtual environment
 
 ---
 
-## Setup Instructions
+## Setup Guide
 
-### 1. Clone the Repository
+### 1. Clone the repository
 
-```
-git clone https://github.com/Naren04karthik/ai_mini_RAG.git
+```powershell
+cd c:\Users\LENOVO\Documents\AI_MINI_PROJECT_COOKING_ASSISTANCE
+git clone https://github.com/your-username/your-repo-name.git
 cd ai_mini_RAG
 ```
 
----
+### 2. Create a Python virtual environment
 
-### 2. Create Virtual Environment
-
-```
+```powershell
 python -m venv .venv
 ```
 
-Activate:
+### 3. Activate the virtual environment
 
-**Windows:**
-
-```
+```powershell
 .venv\Scripts\activate
 ```
 
----
+### 4. Install Python dependencies
 
-### 3. Install Dependencies
-
-```
+```powershell
 pip install fastapi uvicorn langchain langchain-community langchain-huggingface langchain-groq sentence-transformers faiss-cpu python-dotenv
 ```
 
----
+### 5. Configure environment variables
 
-### 4. Setup Environment Variables
+Create a `.env` file in the project root with:
 
-Create a `.env` file in root:
-
-```
+```text
 GROQ_API_KEY=your_groq_api_key_here
 ```
 
----
+### 6. Start the backend server
 
-### 5. Run Backend (FastAPI)
-
-```
-uvicorn main:app --reload
+```powershell
+python -m uvicorn main:app --reload
 ```
 
-Server will run at:
+The backend will start at:
 
-```
+```text
 http://127.0.0.1:8000
 ```
 
+### 7. Start the frontend
+
+From the `frontend` folder, install frontend dependencies and run the dev server:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Then open the local URL shown by Vite in your browser.
+
+> If you prefer, you can also open `frontend/index.html` directly, but using Vite is recommended for the React frontend.
+
 ---
 
-### 6. Run Frontend
+## Usage
 
-* Open `frontend/index.html` in browser
-  OR
-* Use Live Server in VS Code
+1. Open the frontend in your browser.
+2. Enter ingredients or a dish query.
+3. Submit the query.
+4. The app sends the request to the FastAPI backend, which performs semantic retrieval and text generation.
+5. The answer is displayed in the chat interface.
+
+Example queries:
+- `chicken, garlic, lemon`
+- `low calorie meal with eggs`
+- `how to make pasta`
 
 ---
 
-## Conclusion
+## API Endpoint
 
-This project demonstrates the effective use of Retrieval-Augmented Generation (RAG) by combining FAISS-based semantic retrieval with LLM-based response generation. It provides a practical and user-friendly solution for recipe discovery and cooking assistance.
+### POST `/chat`
+
+Request body:
+
+```json
+{
+  "query": "your question or ingredients"
+}
+```
+
+Response body:
+
+```json
+{
+  "answer": "Response text from the assistant"
+}
+```
 
 ---
+
+## Troubleshooting
+
+- If the frontend says "Unable to reach the server", make sure the backend is running at `http://127.0.0.1:8000`.
+- If you see a missing `GROQ_API_KEY`, confirm `.env` exists and contains a valid Groq API key.
+- If query responses are incorrect, the app may be matching greeting text too broadly; that logic is handled in `main.py`.
+
+---
+
+## Notes
+
+- `app.py` is not currently used by the React + FastAPI implementation.
+- The FAISS index file `recipe_faiss_index/index.faiss` is needed for recipe retrieval.
+- Do not commit `.env`, `.venv`, or large index files to GitHub.
+
+---
+
+## Contribution
+
+To contribute:
+1. Fork the repo
+2. Create a branch
+3. Make your changes
+4. Open a pull request
+
+---
+
+## License
+
+Add your project license details here.
