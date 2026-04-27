@@ -25,7 +25,7 @@ const RecipeChat = () => {
   const handleSendMessage = async (query) => {
     if (!query.trim()) return
 
-  
+    // Add user message
     const userMessage = {
       id: Date.now(),
       text: query,
@@ -153,7 +153,7 @@ const RecipeChat = () => {
 }
 
 function formatBotResponse(text) {
-  
+  // Format recipe response with better styling
   let formatted = text
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/__(.*?)__/g, '<em>$1</em>')
@@ -161,6 +161,7 @@ function formatBotResponse(text) {
     .replace(/- /g, '<li>')
     .replace(/<li>.*?<br\/>/g, match => `<li>${match.slice(4, -5)}</li>`)
 
+  // Wrap li tags in ul
   if (formatted.includes('<li>')) {
     formatted = formatted.replace(/(<li>.*?<\/li>)/gs, '<ul>$1</ul>')
     formatted = formatted.replace(/<\/li><li>/g, '</li>\n<li>')

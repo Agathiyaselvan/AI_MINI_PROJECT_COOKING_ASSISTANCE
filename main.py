@@ -9,11 +9,15 @@ from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_groq import ChatGroq
 
-
+# -----------------------------
+# Load ENV
+# -----------------------------
 load_dotenv()
 groq_api_key = os.getenv("GROQ_API_KEY")
 
-
+# -----------------------------
+# FastAPI setup
+# -----------------------------
 app = FastAPI()
 
 app.add_middleware(
@@ -24,7 +28,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+# -----------------------------
+# Load embeddings + FAISS
+# -----------------------------
 embeddings = HuggingFaceEmbeddings(
     model_name="sentence-transformers/all-MiniLM-L6-v2"
 )
@@ -35,26 +41,29 @@ vector_db = FAISS.load_local(
     allow_dangerous_deserialization=True
 )
 
-
+# -----------------------------
+# Load LLM
+# -----------------------------
 llm = ChatGroq(
     model_name="llama-3.1-8b-instant",
     temperature=0,
     groq_api_key=groq_api_key
 )
 
-
+# -----------------------------
+# Request model
+# -----------------------------
 class QueryRequest(BaseModel):
     query: str
 
 
+# -----------------------------
+# UTIL FUNCTIONS
+# -----------------------------
 def extract_ingredients(text):
     match = re.search(r"Ingredients:(.*?)(Instructions:|Directions:|$)", text, re.S)
     if match:
-        return [
-            i.strip().lower()
-            for i in re.split(r",|\n", match.group(1))
-            if i.strip()
-        ]
+        return [i.strip().lower() for i in re.split(r",|\n", match.group(1)) if i.strip()]
     return []
 
 def clean_input(query):
@@ -75,73 +84,139 @@ def extract_dish(query):
     return q
 
 def is_greeting(query):
-    greetings = [
-        "good morning", "good afternoon", "good evening",
-        "hi there", "hello there", "greetings", "hello", "hi", "hey"
-    ]
-    return query.lower().strip() in greetings
+    # Order longer greetings first to match them before shorter ones
+    greetings = ["good morning", "good afternoon", "good evening", "hi there", "hello there", "greetings", "hello", "hi", "hey"]
+    query_lower = query.lower().strip()
+    # Only match if the entire query is JUST a greeting (no other text)
+    return query_lower in greetings
 
 
+# -----------------------------
+# MAIN API
+# -----------------------------
+# @app.post("/chat")
+# def chat(req: QueryRequest):
+
+#     query = req.query.strip()
+
+#     # ============================
+#     # 🔹 DISH QUERY
+#     # ============================
+#     if is_dish_query(query):
+
+#         dish = extract_dish(query)
+#         docs = vector_db.similarity_search(dish, k=1)
+
+#         if not docs:
+#             return {"answer": "Recipe not found"}
+
+#         recipe_text = docs[0].page_content
+
+#         prompt = f"""
+#             You are a professional chef.
+#             If the prompt query is out of domain say out of domain question.Dont do assumption for it by giving the wrong information.
+
+
+#             Use ONLY the recipe below.
+
+#             Recipe:
+#             {recipe_text}
+
+#             Give:
+#             - Recipe Name
+#             - Ingredients (bullet points)
+#             - Steps (numbered clearly)
+#             - DO NOT include any "Missing Ingredients" section
+
+#             FORMAT:
+
+#             Recipe Name:
+#             ...
+
+#             Ingredients:
+#             - item1
+#             - item2
+
+#             Steps:(Each step should be explained clearly in detail)
+#             1. ...
+#             2. ...
+#             """
+
+#         res = llm.invoke(prompt)
+#         return {"answer": res.content}
 @app.post("/chat")
 def chat(req: QueryRequest):
 
     query = req.query.strip().lower()
 
-    # Greeting
+    # -----------------------------
+    # 🔹 GREETING CHECK
+    # -----------------------------
     if is_greeting(query):
         return {
-            "answer": (
-                "Hello! 👨‍🍳 I'm your AI Recipe Assistant. "
-                "I can help you find recipes based on ingredients "
-                "or show you how to prepare a dish. What would you like to cook?"
-            )
+            "answer": "Hello! 👨‍🍳 I'm your AI Recipe Assistant. I can help you find recipes based on ingredients you have or suggest how to make specific dishes. What would you like to cook today?"
         }
 
-    # Out-of-domain check
+    # -----------------------------
+    # 🔹 OUT OF DOMAIN CHECK
+    # -----------------------------
     docs_scores = vector_db.similarity_search_with_score(query, k=1)
-    threshold = 1.5
+
+    threshold = 1.5  # tune if needed
 
     if not docs_scores or docs_scores[0][1] > threshold:
         return {
-            "answer": (
-                "I can only assist with food and cooking-related questions. "
-                "Please ask something related to recipes or ingredients."
-            )
+            "answer": "I can only help with food and cooking-related questions. Please ask something about recipes or ingredients!"
         }
 
-    # Dish-based query
-   
+    # ============================
+    # 🔹 DISH QUERY
+    # ============================
     if is_dish_query(query):
 
         dish = extract_dish(query)
         docs = vector_db.similarity_search(dish, k=1)
 
         if not docs:
-            return {"answer": "Recipe not found."}
+            return {"answer": "Recipe not found"}
 
         recipe_text = docs[0].page_content
 
         prompt = f"""
-        You are a professional chef.
+            You are a professional chef.
 
-        Use ONLY the recipe below.
+            Use ONLY the recipe below.
 
-        Recipe:
-        {recipe_text}
+            Recipe:
+            {recipe_text}
 
-        Provide:
-        - Recipe Name
-        - Ingredients (bullet points)
-        - Steps (numbered and explained clearly)
+            Give:
+            - Recipe Name
+            - Ingredients (bullet points)
+            - Steps (numbered clearly)
 
-        Do NOT include missing ingredients.
-        """
+            DO NOT include missing ingredients.
+
+            FORMAT:
+
+            Recipe Name:
+            ...
+
+            Ingredients:
+            - item1
+            - item2
+
+            Steps:(Each step should be explained clearly in detail)
+            1. ...
+            2. ...
+            """
 
         res = llm.invoke(prompt)
         return {"answer": res.content}
 
-    #Ingredient-based query
-
+    # ============================
+    # 🔹 INGREDIENT QUERY
+    # ============================
     user = clean_input(query)
 
     docs_scores = vector_db.similarity_search_with_score(query, k=3)
@@ -151,11 +226,14 @@ def chat(req: QueryRequest):
     best_score = -1
 
     for doc in docs:
-        recipe_ing = extract_ingredients(doc.page_content)
+        recipe_text = doc.page_content
+        recipe_ing = extract_ingredients(recipe_text)
+
         overlap = sum(
             1 for r in recipe_ing
             if any(u in r or r in u for u in user)
         )
+
         if overlap > best_score:
             best_score = overlap
             best_doc = doc
@@ -165,29 +243,112 @@ def chat(req: QueryRequest):
 
     recipe_text = best_doc.page_content
     recipe_ing = extract_ingredients(recipe_text)
+
     missing = get_missing(user, recipe_ing)
     missing_text = "None" if not missing else ", ".join(missing)
 
     prompt = f"""
-    You are a professional chef assistant.
+        You are a professional chef assistant.
 
-    Use ONLY the recipe below.
+        Use ONLY the given recipe.
 
-    Recipe:
-    {recipe_text}
+        Recipe:
+        {recipe_text}
 
-    User Ingredients:
-    {query}
+        User Ingredients:
+        {query}
 
-    Provide:
-    - Recipe Name
-    - Ingredients
-    - Detailed Steps
-    - Missing Ingredients
+        Give:
+        - Recipe Name
+        - Ingredients
+        - Steps
+        - Missing Ingredients: {missing_text}
 
-    Missing Ingredients:
-    {missing_text}
-    """
+        FORMAT:
+
+        Recipe Name:
+        ...
+
+        Ingredients:
+        - item1
+        - item2
+
+        Steps:(Each step should be explained clearly in detail)
+        1. ...
+        2. ...
+
+        Missing Ingredients:
+        {missing_text}
+        """
 
     res = llm.invoke(prompt)
+
+    return {"answer": res.content}
+
+    # ============================
+    # 🔹 INGREDIENT QUERY
+    # ============================
+    user = clean_input(query)
+    docs = vector_db.similarity_search(query, k=3)
+
+    best_doc = None
+    best_score = -1
+
+    for doc in docs:
+        recipe_text = doc.page_content
+        recipe_ing = extract_ingredients(recipe_text)
+
+        overlap = sum(
+            1 for r in recipe_ing
+            if any(u in r or r in u for u in user)
+        )
+
+        if overlap > best_score:
+            best_score = overlap
+            best_doc = doc
+
+    if not best_doc:
+        return {"answer": "No suitable recipe found."}
+
+    recipe_text = best_doc.page_content
+    recipe_ing = extract_ingredients(recipe_text)
+
+    missing = get_missing(user, recipe_ing)
+    missing_text = "None" if not missing else ", ".join(missing)
+
+    prompt = f"""
+            You are a professional chef assistant.
+            If the prompt query is out of domain say out of domain question.Dont do assumption for it by giving the wrong information.
+
+            Recipe:
+            {recipe_text}
+
+            User Ingredients:
+            {query}
+
+            Give:
+            - Recipe Name
+            - Ingredients
+            - Steps
+            - Missing Ingredients: {missing_text}
+
+            FORMAT:
+
+            Recipe Name:
+            ...
+
+            Ingredients:
+            - item1
+            - item2
+
+            Steps:(Each step should be explained clearly in detail)
+            1. ...
+            2. ...
+
+            Missing Ingredients:
+            {missing_text}
+            """
+
+    res = llm.invoke(prompt)
+
     return {"answer": res.content}

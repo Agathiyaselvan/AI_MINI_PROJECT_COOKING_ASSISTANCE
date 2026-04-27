@@ -15,7 +15,7 @@ SAMPLES_PER_GENRE = 1500
 # Store collected samples
 genre_samples = {g: [] for g in GENRES}
 
-# Track counts of the samples collected for each genre
+# Track counts safely
 genre_counts = {g: 0 for g in GENRES}
 
 for chunk in pd.read_csv(INPUT_FILE, chunksize=CHUNK_SIZE):
@@ -37,23 +37,24 @@ for chunk in pd.read_csv(INPUT_FILE, chunksize=CHUNK_SIZE):
             genre_samples[genre].append(sampled)
             genre_counts[genre] += len(sampled)
 
-   
+    # Safe stopping condition (no concat)
     if all(genre_counts[g] >= SAMPLES_PER_GENRE for g in GENRES):
         break
 
 
-
+# Combine all results
 final_list = []
 
 for g in GENRES:
-    if genre_samples[g]:  # avoid empty lists
+    if genre_samples[g]:  # avoid empty
         final_list.append(pd.concat(genre_samples[g]))
 
 final_df = pd.concat(final_list)
 
-# Shuffle the final dataset
+# Shuffle
 final_df = final_df.sample(frac=1).reset_index(drop=True)
 
+# Save
 final_df.to_csv(OUTPUT_FILE, index=False)
 
 print("Done!")
