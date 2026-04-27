@@ -72,8 +72,8 @@ ai_mini_RAG/
 
 ```powershell
 cd c:\Users\LENOVO\Documents\AI_MINI_PROJECT_COOKING_ASSISTANCE
-git clone https://github.com/your-username/your-repo-name.git
-cd ai_mini_RAG
+https://github.com/Agathiyaselvan/AI_MINI_PROJECT_COOKING_ASSISTANCE.git
+AI_MINI_PROJECT_RAG
 ```
 
 ### 2. Create a Python virtual environment
@@ -105,7 +105,7 @@ GROQ_API_KEY=your_groq_api_key_here
 ### 6. Start the backend server
 
 ```powershell
-python -m uvicorn main:app --reload
+python -m uvicorn main:app --reload 
 ```
 
 The backend will start at:
@@ -183,16 +183,4 @@ Response body:
 
 ---
 
-## Contribution
 
-To contribute:
-1. Fork the repo
-2. Create a branch
-3. Make your changes
-4. Open a pull request
-
----
-
-## License
-
-Add your project license details here.
